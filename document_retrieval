@@ -1,0 +1,226 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Document retrieval from Wikipedia data
+
+# In[1]:
+
+
+import turicreate
+
+
+# # Load some text data from Wikipedia
+
+# In[2]:
+
+
+people = turicreate.SFrame('~/src/people_wiki.sframe')
+
+
+# In[3]:
+
+
+people
+
+
+# # Explore data
+
+# ## Taking a look at the entry for President Obama
+
+# In[4]:
+
+
+obama = people[people['name'] == 'Barack Obama']
+
+
+# In[5]:
+
+
+obama
+
+
+# In[6]:
+
+
+obama['text']
+
+
+# ## Explore the entry for actor George Clooney
+
+# In[7]:
+
+
+clooney = people[people['name'] == 'George Clooney']
+clooney['text']
+
+
+# # Word counts for Obama acticle
+
+# In[8]:
+
+
+obama['word_count'] = turicreate.text_analytics.count_words(obama['text'])
+
+
+# In[9]:
+
+
+obama
+
+
+# In[10]:
+
+
+print (obama['word_count'])
+
+
+# ## Find most common words in Obama article
+
+# In[11]:
+
+
+obama.stack('word_count',new_column_name=['word','count'])
+
+
+# In[12]:
+
+
+obama_word_count_table = obama[['word_count']].stack('word_count', new_column_name = ['word','count'])
+
+
+# In[13]:
+
+
+obama_word_count_table
+
+
+# In[14]:
+
+
+obama_word_count_table.sort('count',ascending=False)
+
+
+# # Compute TF-IDF for the entire corpus of articles
+
+# In[15]:
+
+
+people['word_count'] = turicreate.text_analytics.count_words(people['text'])
+
+
+# In[16]:
+
+
+people
+
+
+# In[17]:
+
+
+people['tfidf'] = turicreate.text_analytics.tf_idf(people['text'])
+
+
+# In[18]:
+
+
+people
+
+
+# ## Examine the TF-IDF for the Obama article
+
+# In[19]:
+
+
+obama = people[people['name'] == 'Barack Obama']
+obama[['tfidf']].stack('tfidf',new_column_name=['word','tfidf']).sort('tfidf',ascending=False)
+
+
+# ## Examine the TF-IDF for Clooney
+
+# In[20]:
+
+
+clooney = people[people['name'] == 'George Clooney']
+clooney[['tfidf']].stack('tfidf',new_column_name=['word','tfidf']).sort('tfidf',ascending=False)
+
+
+# # Manually evaluate the distance between certain people's articles
+
+# In[21]:
+
+
+clinton = people[people['name'] == 'Bill Clinton']
+beckham = people[people['name'] == 'David Beckham']
+
+
+# ## Is Obama closer to Clinton or to Beckham?
+
+# In[22]:
+
+
+turicreate.distances.cosine(obama['tfidf'][0],clinton['tfidf'][0])
+
+
+# In[23]:
+
+
+turicreate.distances.cosine(obama['tfidf'][0],beckham['tfidf'][0])
+
+
+# # Apply nearest neighbors for retrieval of Wikipedia articles
+
+# ## Build the NN model
+
+# In[24]:
+
+
+knn_model = turicreate.nearest_neighbors.create(people,features=['tfidf'],label='name')
+
+
+# ## Use model for retrieval... for example, who is closest to Obama?
+
+# In[25]:
+
+
+knn_model.query(obama)
+
+
+# ## Other examples of retrieval
+
+# In[26]:
+
+
+swift = people[people['name'] == 'Taylor Swift']
+
+
+# In[27]:
+
+
+knn_model.query(swift)
+
+
+# In[28]:
+
+
+jolie = people[people['name'] == 'Angelina Jolie']
+
+
+# In[29]:
+
+
+knn_model.query(jolie)
+
+
+# In[30]:
+
+
+arnold = people[people['name'] == 'Arnold Schwarzenegger']
+
+
+# In[31]:
+
+
+knn_model.query(arnold)
+
+
+# In[ ]:
