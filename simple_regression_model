@@ -1,0 +1,225 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Launch Turi Create
+
+# In[1]:
+
+
+import turicreate
+
+
+# # Load house sales data
+
+# In[2]:
+
+
+sales = turicreate.SFrame('~/src/home_data.sframe/')
+
+
+# In[3]:
+
+
+sales
+
+
+# # Explore
+
+# In[4]:
+
+
+sales.show()
+
+
+# In[5]:
+
+
+turicreate.show(sales[1:5000]['sqft_living'],sales[1:5000]['price'])
+
+
+# # Simple regression model that predicts price from square feet
+
+# In[6]:
+
+
+training_set, test_set = sales.random_split(.8,seed=0)
+
+
+# ## train simple regression model
+
+# In[7]:
+
+
+sqft_model = turicreate.linear_regression.create(training_set,target='price',features=['sqft_living'])
+
+
+# # Evaluate the quality of our model
+
+# In[8]:
+
+
+print (test_set['price'].mean())
+
+
+# In[9]:
+
+
+print (sqft_model.evaluate(test_set))
+
+
+# # Explore model a little further
+
+# In[10]:
+
+
+sqft_model.coefficients
+
+
+# In[11]:
+
+
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+plt.plot(test_set['sqft_living'],test_set['price'],'.',
+        test_set['sqft_living'],sqft_model.predict(test_set),'-')
+
+
+# # Explore other features of the data
+
+# In[12]:
+
+
+my_features = ['bedrooms','bathrooms','sqft_living','sqft_lot','floors','zipcode']
+
+
+# In[13]:
+
+
+sales[my_features].show()
+
+
+# In[14]:
+
+
+turicreate.show(sales['zipcode'],sales['price'])
+
+
+# # Build a model with these additional features
+
+# In[15]:
+
+
+my_features_model = turicreate.linear_regression.create(training_set,target='price',features=my_features)
+
+
+# # Compare simple model with more complex one
+
+# In[16]:
+
+
+print (my_features)
+
+
+# In[17]:
+
+
+print (sqft_model.evaluate(test_set))
+print (my_features_model.evaluate(test_set))
+
+
+# # Apply learned models to make predictions
+
+# In[18]:
+
+
+house1 = sales[sales['id']=='5309101200']
+
+
+# In[19]:
+
+
+house1
+
+
+# <img src="http://blue.kingcounty.com/Assessor/eRealProperty/MediaHandler.aspx?Media=2916871">
+
+# In[20]:
+
+
+print (house1['price'])
+
+
+# In[21]:
+
+
+print (sqft_model.predict(house1))
+
+
+# In[22]:
+
+
+print (my_features_model.predict(house1))
+
+
+# ## Prediction for a second house, a fancier one
+
+# In[23]:
+
+
+house2 = sales[sales['id']=='1925069082']
+
+
+# In[24]:
+
+
+house2
+
+
+# <img src="https://ssl.cdn-redfin.com/photo/1/bigphoto/302/734302_0.jpg">
+
+# In[25]:
+
+
+print (sqft_model.predict(house2))
+
+
+# In[26]:
+
+
+print (my_features_model.predict(house2))
+
+
+# ## Prediction for a super fancy home
+
+# In[27]:
+
+
+bill_gates = {'bedrooms':[8], 
+              'bathrooms':[25], 
+              'sqft_living':[50000], 
+              'sqft_lot':[225000],
+              'floors':[4], 
+              'zipcode':['98039'], 
+              'condition':[10], 
+              'grade':[10],
+              'waterfront':[1],
+              'view':[4],
+              'sqft_above':[37500],
+              'sqft_basement':[12500],
+              'yr_built':[1994],
+              'yr_renovated':[2010],
+              'lat':[47.627606],
+              'long':[-122.242054],
+              'sqft_living15':[5000],
+              'sqft_lot15':[40000]}
+
+
+# <img src="https://upload.wikimedia.org/wikipedia/commons/2/26/Residence_of_Bill_Gates.jpg">
+
+# In[28]:
+
+
+print (my_features_model.predict(turicreate.SFrame(bill_gates)))
+
+
+# In[ ]:
